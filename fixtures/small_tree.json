@@ -1,0 +1,26 @@
+{
+  "description": "One poll with a known process tree. Round numbers so subtree totals are easy to check by hand.",
+  "tree": "1 -> {10, 20, 30}; 10 -> {11, 12}; 20 -> {21}; 21 -> {22, 23}; 30 -> {31}",
+  "expected_subtree_totals": {
+    "1":  {"count": 10, "cpu_percent": 49.5, "rss_mb": 1115.0},
+    "10": {"count": 3,  "cpu_percent": 8.0,  "rss_mb": 150.0},
+    "20": {"count": 4,  "cpu_percent": 40.0, "rss_mb": 900.0},
+    "21": {"count": 3,  "cpu_percent": 30.0, "rss_mb": 700.0},
+    "30": {"count": 2,  "cpu_percent": 0.5,  "rss_mb": 55.0},
+    "22": {"count": 1,  "cpu_percent": 4.0,  "rss_mb": 150.0}
+  },
+  "polls": [
+    {"t": 0.0, "processes": [
+      {"pid": 1,  "ppid": 0,  "name": "launchd",                   "create_time": 100.0, "cpu_percent": 1.0,  "rss_mb": 10.0},
+      {"pid": 10, "ppid": 1,  "name": "WindowServer",              "create_time": 101.0, "cpu_percent": 5.0,  "rss_mb": 100.0},
+      {"pid": 11, "ppid": 10, "name": "ws-helper-a",               "create_time": 102.0, "cpu_percent": 1.0,  "rss_mb": 20.0},
+      {"pid": 12, "ppid": 10, "name": "ws-helper-b",               "create_time": 103.0, "cpu_percent": 2.0,  "rss_mb": 30.0},
+      {"pid": 20, "ppid": 1,  "name": "Browser",                   "create_time": 200.0, "cpu_percent": 10.0, "rss_mb": 200.0, "is_mine": true},
+      {"pid": 21, "ppid": 20, "name": "Browser Helper (GPU)",      "create_time": 201.0, "cpu_percent": 20.0, "rss_mb": 300.0, "is_mine": true},
+      {"pid": 22, "ppid": 21, "name": "Browser Helper (Renderer)", "create_time": 202.0, "cpu_percent": 4.0,  "rss_mb": 150.0, "is_mine": true},
+      {"pid": 23, "ppid": 21, "name": "Browser Helper (Renderer)", "create_time": 203.0, "cpu_percent": 6.0,  "rss_mb": 250.0, "is_mine": true},
+      {"pid": 30, "ppid": 1,  "name": "Terminal",                  "create_time": 300.0, "cpu_percent": 0.5,  "rss_mb": 50.0,  "is_mine": true},
+      {"pid": 31, "ppid": 30, "name": "zsh",                       "create_time": 301.0, "cpu_percent": 0.0,  "rss_mb": 5.0,   "is_mine": true}
+    ]}
+  ]
+}

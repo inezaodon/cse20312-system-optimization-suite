@@ -1,0 +1,405 @@
+{
+ "description": "Idle detection sequence. Tests use cpu_threshold=1.0, idle_seconds=300.",
+ "expected": {
+  "Notes (100)": "idle at t=300, 360, 420 (not at t=240: only 240 s below threshold)",
+  "Slack (200)": "idle at t=300; CPU spike at t=360 resets the timer; not idle at t=360 or t=420",
+  "Xcode (300)": "never idle",
+  "Preview (400)": "never idle: 1.0% is not below a 1.0% threshold",
+  "launchd (1)": "is_mine=false, so it is excluded when only the user's processes are considered",
+  "savings_rss_mb (mine only)": "t=300: 520.0 (Notes + Slack); t=360 and t=420: 120.0 (Notes)"
+ },
+ "polls": [
+  {
+   "t": 0.0,
+   "processes": [
+    {
+     "pid": 1,
+     "ppid": 0,
+     "name": "launchd",
+     "create_time": 1.0,
+     "cpu_percent": 0.1,
+     "rss_mb": 10.0
+    },
+    {
+     "pid": 100,
+     "ppid": 1,
+     "name": "Notes",
+     "create_time": 1000.0,
+     "cpu_percent": 0.2,
+     "rss_mb": 120.0,
+     "is_mine": true
+    },
+    {
+     "pid": 200,
+     "ppid": 1,
+     "name": "Slack",
+     "create_time": 2000.0,
+     "cpu_percent": 0.3,
+     "rss_mb": 400.0,
+     "is_mine": true
+    },
+    {
+     "pid": 300,
+     "ppid": 1,
+     "name": "Xcode",
+     "create_time": 3000.0,
+     "cpu_percent": 35.0,
+     "rss_mb": 2000.0,
+     "is_mine": true
+    },
+    {
+     "pid": 400,
+     "ppid": 1,
+     "name": "Preview",
+     "create_time": 4000.0,
+     "cpu_percent": 1.0,
+     "rss_mb": 80.0,
+     "is_mine": true
+    }
+   ]
+  },
+  {
+   "t": 60.0,
+   "processes": [
+    {
+     "pid": 1,
+     "ppid": 0,
+     "name": "launchd",
+     "create_time": 1.0,
+     "cpu_percent": 0.1,
+     "rss_mb": 10.0
+    },
+    {
+     "pid": 100,
+     "ppid": 1,
+     "name": "Notes",
+     "create_time": 1000.0,
+     "cpu_percent": 0.2,
+     "rss_mb": 120.0,
+     "is_mine": true
+    },
+    {
+     "pid": 200,
+     "ppid": 1,
+     "name": "Slack",
+     "create_time": 2000.0,
+     "cpu_percent": 0.3,
+     "rss_mb": 400.0,
+     "is_mine": true
+    },
+    {
+     "pid": 300,
+     "ppid": 1,
+     "name": "Xcode",
+     "create_time": 3000.0,
+     "cpu_percent": 35.0,
+     "rss_mb": 2000.0,
+     "is_mine": true
+    },
+    {
+     "pid": 400,
+     "ppid": 1,
+     "name": "Preview",
+     "create_time": 4000.0,
+     "cpu_percent": 1.0,
+     "rss_mb": 80.0,
+     "is_mine": true
+    }
+   ]
+  },
+  {
+   "t": 120.0,
+   "processes": [
+    {
+     "pid": 1,
+     "ppid": 0,
+     "name": "launchd",
+     "create_time": 1.0,
+     "cpu_percent": 0.1,
+     "rss_mb": 10.0
+    },
+    {
+     "pid": 100,
+     "ppid": 1,
+     "name": "Notes",
+     "create_time": 1000.0,
+     "cpu_percent": 0.2,
+     "rss_mb": 120.0,
+     "is_mine": true
+    },
+    {
+     "pid": 200,
+     "ppid": 1,
+     "name": "Slack",
+     "create_time": 2000.0,
+     "cpu_percent": 0.3,
+     "rss_mb": 400.0,
+     "is_mine": true
+    },
+    {
+     "pid": 300,
+     "ppid": 1,
+     "name": "Xcode",
+     "create_time": 3000.0,
+     "cpu_percent": 35.0,
+     "rss_mb": 2000.0,
+     "is_mine": true
+    },
+    {
+     "pid": 400,
+     "ppid": 1,
+     "name": "Preview",
+     "create_time": 4000.0,
+     "cpu_percent": 1.0,
+     "rss_mb": 80.0,
+     "is_mine": true
+    }
+   ]
+  },
+  {
+   "t": 180.0,
+   "processes": [
+    {
+     "pid": 1,
+     "ppid": 0,
+     "name": "launchd",
+     "create_time": 1.0,
+     "cpu_percent": 0.1,
+     "rss_mb": 10.0
+    },
+    {
+     "pid": 100,
+     "ppid": 1,
+     "name": "Notes",
+     "create_time": 1000.0,
+     "cpu_percent": 0.2,
+     "rss_mb": 120.0,
+     "is_mine": true
+    },
+    {
+     "pid": 200,
+     "ppid": 1,
+     "name": "Slack",
+     "create_time": 2000.0,
+     "cpu_percent": 0.3,
+     "rss_mb": 400.0,
+     "is_mine": true
+    },
+    {
+     "pid": 300,
+     "ppid": 1,
+     "name": "Xcode",
+     "create_time": 3000.0,
+     "cpu_percent": 35.0,
+     "rss_mb": 2000.0,
+     "is_mine": true
+    },
+    {
+     "pid": 400,
+     "ppid": 1,
+     "name": "Preview",
+     "create_time": 4000.0,
+     "cpu_percent": 1.0,
+     "rss_mb": 80.0,
+     "is_mine": true
+    }
+   ]
+  },
+  {
+   "t": 240.0,
+   "processes": [
+    {
+     "pid": 1,
+     "ppid": 0,
+     "name": "launchd",
+     "create_time": 1.0,
+     "cpu_percent": 0.1,
+     "rss_mb": 10.0
+    },
+    {
+     "pid": 100,
+     "ppid": 1,
+     "name": "Notes",
+     "create_time": 1000.0,
+     "cpu_percent": 0.2,
+     "rss_mb": 120.0,
+     "is_mine": true
+    },
+    {
+     "pid": 200,
+     "ppid": 1,
+     "name": "Slack",
+     "create_time": 2000.0,
+     "cpu_percent": 0.3,
+     "rss_mb": 400.0,
+     "is_mine": true
+    },
+    {
+     "pid": 300,
+     "ppid": 1,
+     "name": "Xcode",
+     "create_time": 3000.0,
+     "cpu_percent": 35.0,
+     "rss_mb": 2000.0,
+     "is_mine": true
+    },
+    {
+     "pid": 400,
+     "ppid": 1,
+     "name": "Preview",
+     "create_time": 4000.0,
+     "cpu_percent": 1.0,
+     "rss_mb": 80.0,
+     "is_mine": true
+    }
+   ]
+  },
+  {
+   "t": 300.0,
+   "processes": [
+    {
+     "pid": 1,
+     "ppid": 0,
+     "name": "launchd",
+     "create_time": 1.0,
+     "cpu_percent": 0.1,
+     "rss_mb": 10.0
+    },
+    {
+     "pid": 100,
+     "ppid": 1,
+     "name": "Notes",
+     "create_time": 1000.0,
+     "cpu_percent": 0.2,
+     "rss_mb": 120.0,
+     "is_mine": true
+    },
+    {
+     "pid": 200,
+     "ppid": 1,
+     "name": "Slack",
+     "create_time": 2000.0,
+     "cpu_percent": 0.3,
+     "rss_mb": 400.0,
+     "is_mine": true
+    },
+    {
+     "pid": 300,
+     "ppid": 1,
+     "name": "Xcode",
+     "create_time": 3000.0,
+     "cpu_percent": 35.0,
+     "rss_mb": 2000.0,
+     "is_mine": true
+    },
+    {
+     "pid": 400,
+     "ppid": 1,
+     "name": "Preview",
+     "create_time": 4000.0,
+     "cpu_percent": 1.0,
+     "rss_mb": 80.0,
+     "is_mine": true
+    }
+   ]
+  },
+  {
+   "t": 360.0,
+   "processes": [
+    {
+     "pid": 1,
+     "ppid": 0,
+     "name": "launchd",
+     "create_time": 1.0,
+     "cpu_percent": 0.1,
+     "rss_mb": 10.0
+    },
+    {
+     "pid": 100,
+     "ppid": 1,
+     "name": "Notes",
+     "create_time": 1000.0,
+     "cpu_percent": 0.2,
+     "rss_mb": 120.0,
+     "is_mine": true
+    },
+    {
+     "pid": 200,
+     "ppid": 1,
+     "name": "Slack",
+     "create_time": 2000.0,
+     "cpu_percent": 15.0,
+     "rss_mb": 400.0,
+     "is_mine": true
+    },
+    {
+     "pid": 300,
+     "ppid": 1,
+     "name": "Xcode",
+     "create_time": 3000.0,
+     "cpu_percent": 35.0,
+     "rss_mb": 2000.0,
+     "is_mine": true
+    },
+    {
+     "pid": 400,
+     "ppid": 1,
+     "name": "Preview",
+     "create_time": 4000.0,
+     "cpu_percent": 1.0,
+     "rss_mb": 80.0,
+     "is_mine": true
+    }
+   ]
+  },
+  {
+   "t": 420.0,
+   "processes": [
+    {
+     "pid": 1,
+     "ppid": 0,
+     "name": "launchd",
+     "create_time": 1.0,
+     "cpu_percent": 0.1,
+     "rss_mb": 10.0
+    },
+    {
+     "pid": 100,
+     "ppid": 1,
+     "name": "Notes",
+     "create_time": 1000.0,
+     "cpu_percent": 0.2,
+     "rss_mb": 120.0,
+     "is_mine": true
+    },
+    {
+     "pid": 200,
+     "ppid": 1,
+     "name": "Slack",
+     "create_time": 2000.0,
+     "cpu_percent": 0.3,
+     "rss_mb": 400.0,
+     "is_mine": true
+    },
+    {
+     "pid": 300,
+     "ppid": 1,
+     "name": "Xcode",
+     "create_time": 3000.0,
+     "cpu_percent": 35.0,
+     "rss_mb": 2000.0,
+     "is_mine": true
+    },
+    {
+     "pid": 400,
+     "ppid": 1,
+     "name": "Preview",
+     "create_time": 4000.0,
+     "cpu_percent": 1.0,
+     "rss_mb": 80.0,
+     "is_mine": true
+    }
+   ]
+  }
+ ]
+}

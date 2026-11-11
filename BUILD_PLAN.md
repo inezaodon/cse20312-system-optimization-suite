@@ -205,9 +205,10 @@ class ProcessSnapshot:
     ppid: int
     name: str
     create_time: float
-    cpu_percent: float        # 0.0 if unknown
-    rss_mb: float             # 0.0 if unknown
+    cpu_percent: float | None # None if unknown (access denied, or first sample)
+    rss_mb: float | None      # None if access denied
     restricted: bool = False  # True if AccessDenied blocked a metric
+    is_mine: bool = False     # owned by the current user (no usernames are stored)
 
     @property
     def key(self) -> tuple:   # (pid, create_time), unique even when PIDs get reused

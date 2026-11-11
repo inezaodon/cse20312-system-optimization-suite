@@ -1,0 +1,33 @@
+{
+  "description": "Edge cases: process exit, PID reuse, re-parenting, restricted processes, warming-up CPU readings.",
+  "expected": {
+    "t=0":  "6 processes. secd (70) is restricted. Spotlight (80) has no CPU reading yet (cpu_percent null, not restricted).",
+    "t=10": "Mail (50, ct 1000) and Parent (60) exited. Child (61) re-parented to PID 1. New process Notes (51). Spotlight now has a reading.",
+    "t=20": "PID 50 reused by Calculator (create_time 2000) - a different process from the old Mail."
+  },
+  "polls": [
+    {"t": 0.0, "processes": [
+      {"pid": 1,  "ppid": 0,  "name": "launchd",    "create_time": 1.0,    "cpu_percent": 0.1,  "rss_mb": 10.0},
+      {"pid": 50, "ppid": 1,  "name": "Mail",       "create_time": 1000.0, "cpu_percent": 2.0,  "rss_mb": 180.0, "is_mine": true},
+      {"pid": 60, "ppid": 1,  "name": "Parent",     "create_time": 1000.0, "cpu_percent": 3.0,  "rss_mb": 40.0,  "is_mine": true},
+      {"pid": 61, "ppid": 60, "name": "Child",      "create_time": 1001.0, "cpu_percent": 4.0,  "rss_mb": 30.0,  "is_mine": true},
+      {"pid": 70, "ppid": 1,  "name": "secd",       "create_time": 5.0,    "cpu_percent": null, "rss_mb": null,  "restricted": true},
+      {"pid": 80, "ppid": 1,  "name": "Spotlight",  "create_time": 6.0,    "cpu_percent": null, "rss_mb": 90.0}
+    ]},
+    {"t": 10.0, "processes": [
+      {"pid": 1,  "ppid": 0,  "name": "launchd",    "create_time": 1.0,    "cpu_percent": 0.1,  "rss_mb": 10.0},
+      {"pid": 51, "ppid": 1,  "name": "Notes",      "create_time": 1500.0, "cpu_percent": 0.5,  "rss_mb": 70.0,  "is_mine": true},
+      {"pid": 61, "ppid": 1,  "name": "Child",      "create_time": 1001.0, "cpu_percent": 4.0,  "rss_mb": 30.0,  "is_mine": true},
+      {"pid": 70, "ppid": 1,  "name": "secd",       "create_time": 5.0,    "cpu_percent": null, "rss_mb": null,  "restricted": true},
+      {"pid": 80, "ppid": 1,  "name": "Spotlight",  "create_time": 6.0,    "cpu_percent": 7.5,  "rss_mb": 90.0}
+    ]},
+    {"t": 20.0, "processes": [
+      {"pid": 1,  "ppid": 0,  "name": "launchd",    "create_time": 1.0,    "cpu_percent": 0.1,  "rss_mb": 10.0},
+      {"pid": 50, "ppid": 1,  "name": "Calculator", "create_time": 2000.0, "cpu_percent": 0.0,  "rss_mb": 25.0,  "is_mine": true},
+      {"pid": 51, "ppid": 1,  "name": "Notes",      "create_time": 1500.0, "cpu_percent": 0.5,  "rss_mb": 70.0,  "is_mine": true},
+      {"pid": 61, "ppid": 1,  "name": "Child",      "create_time": 1001.0, "cpu_percent": 4.0,  "rss_mb": 30.0,  "is_mine": true},
+      {"pid": 70, "ppid": 1,  "name": "secd",       "create_time": 5.0,    "cpu_percent": null, "rss_mb": null,  "restricted": true},
+      {"pid": 80, "ppid": 1,  "name": "Spotlight",  "create_time": 6.0,    "cpu_percent": 7.5,  "rss_mb": 90.0}
+    ]}
+  ]
+}

@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 benchmarks/results/
 .DS_Store
+fixtures/recorded_*.json

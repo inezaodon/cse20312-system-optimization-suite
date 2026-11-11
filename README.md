@@ -14,7 +14,7 @@ See [`project_proposal.md`](project_proposal.md) for the design and [`BUILD_PLAN
 | :--- | :--- |
 | 0. Setup | ✅ Done |
 | 1. Bootstrap data structures + benchmarks | ✅ Done |
-| 2. Data sources, ingestion & ranking | ⏳ Not started |
+| 2. Data sources, ingestion & ranking | ✅ Done |
 | 3. Subtree profiler | ⏳ Not started |
 | 4. Memory leak simulator | ⏳ Not started |
 | 5. Charts, testing pass & report | ⏳ Not started |
@@ -41,6 +41,25 @@ python3 -m unittest discover -v
 | :--- | :--- | :--- |
 | [`sysopt/structures/heap.py`](sysopt/structures/heap.py): `MaxHeap`, `MinHeap`, `top_k` | [`tests/test_heap.py`](tests/test_heap.py) | Extract order matches `sorted()`, heap property after every operation, `build_heap`, top-K edge cases (k = 0, k > n, duplicates) |
 | [`sysopt/structures/hash_table.py`](sysopt/structures/hash_table.py): `ChainedHashTable`, `hash_key` | [`tests/test_hash_table.py`](tests/test_hash_table.py) | Insert/get/update/delete, forced collisions, resizing at load factor 0.75, `(pid, create_time)` keys, 1,000 random operations checked against `dict` |
+| [`sysopt/sources/`](sysopt/sources/): `ProcessSnapshot`, `SnapshotSource`, `record_session`, `LiveSource` | [`tests/test_sources.py`](tests/test_sources.py) | Fixture loading and validation, record/replay round trip, `psutil` `AccessDenied` / `NoSuchProcess` / first-sample handling (with fake processes), one live smoke test |
+| [`sysopt/engine/registry.py`](sysopt/engine/registry.py), [`idle.py`](sysopt/engine/idle.py): `ProcessRegistry`, `IdleTracker` | [`tests/test_registry_idle.py`](tests/test_registry_idle.py) | Process exit, PID reuse, re-parenting, idle exactly at T (not before), CPU spikes reset the timer, unknown CPU is never idle |
+| [`sysopt/engine/monitor.py`](sysopt/engine/monitor.py): `Monitor` | [`tests/test_monitor.py`](tests/test_monitor.py) | Top-K by CPU and RAM, idle candidates and RAM savings, user-only filter, minimum-size filter, output formatting |
+
+All tests except one live smoke test run on hand-written JSON fixtures in [`fixtures/`](fixtures/), so results are the same on every machine.
+
+## Trying the Monitor
+
+```bash
+# Live: 3 polls, 2 seconds apart, top 5 by CPU
+python3 -c "from sysopt.engine.monitor import Monitor, format_poll_result; from sysopt.sources.live import LiveSource; print(format_poll_result(Monitor(LiveSource(), k=5).run(3, 2.0)[-1]))"
+
+# Record your own session (10 polls), then replay it offline
+python3 -c "from sysopt.sources.live import LiveSource; from sysopt.sources.snapshot import record_session; record_session(LiveSource(), 10, 2.0, 'fixtures/recorded_session.json')"
+```
+
+A command-line interface (`python3 -m sysopt top|watch|tree|families|leaks`) comes in Phase 3.
+
+On macOS, about a third of processes belong to the system and deny access to CPU and memory readings when run without `sudo`. These are marked `restricted` and left out of the rankings.
 
 ## Bootstrap Benchmarks
 
