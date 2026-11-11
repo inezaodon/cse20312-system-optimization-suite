@@ -121,7 +121,7 @@ class TestRunAndFormat(unittest.TestCase):
         text = format_poll_result(m.run(interval=0)[5])
         self.assertIn("Top", text)
         self.assertIn("Xcode", text)
-        self.assertIn("520.0 MB", text)
+        self.assertIn("Idle candidates: 2   potential savings: 520.0 MB RAM", text)
         self.assertIn("Slack", text)
 
     def test_format_handles_unknown_values(self):

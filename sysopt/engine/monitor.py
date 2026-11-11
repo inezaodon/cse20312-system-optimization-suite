@@ -132,7 +132,7 @@ def _fmt(value: Optional[float], width: int, digits: int = 1) -> str:
     return f"{'—':>{width}}" if value is None else f"{value:>{width}.{digits}f}"
 
 
-def format_poll_result(res: PollResult, idle_limit: int = 5) -> str:
+def format_poll_result(res: PollResult, idle_limit: int = 5, show_idle: bool = True) -> str:
     lines = []
     lines.append(f"t=+{res.elapsed:.1f}s   processes={res.process_count}   "
                  f"restricted={res.restricted_count}   "
@@ -144,6 +144,8 @@ def format_poll_result(res: PollResult, idle_limit: int = 5) -> str:
         s = r.snap
         lines.append(f"  {s.pid:>7}  {s.name[:32]:<32} {_fmt(s.cpu_percent, 7)} "
                      f"{_fmt(s.rss_mb, 9)}")
+    if not show_idle:
+        return "\n".join(lines)
     lines.append(f"\nIdle candidates: {len(res.idle)}   "
                  f"potential savings: {res.savings_rss_mb:,.1f} MB RAM")
     for r in res.idle[:idle_limit]:

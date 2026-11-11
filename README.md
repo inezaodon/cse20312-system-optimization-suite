@@ -15,7 +15,7 @@ See [`project_proposal.md`](project_proposal.md) for the design and [`BUILD_PLAN
 | 0. Setup | ✅ Done |
 | 1. Bootstrap data structures + benchmarks | ✅ Done |
 | 2. Data sources, ingestion & ranking | ✅ Done |
-| 3. Subtree profiler | ⏳ Not started |
+| 3. Subtree profiler + command-line tool | ✅ Done |
 | 4. Memory leak simulator | ⏳ Not started |
 | 5. Charts, testing pass & report | ⏳ Not started |
 
@@ -44,22 +44,54 @@ python3 -m unittest discover -v
 | [`sysopt/sources/`](sysopt/sources/): `ProcessSnapshot`, `SnapshotSource`, `record_session`, `LiveSource` | [`tests/test_sources.py`](tests/test_sources.py) | Fixture loading and validation, record/replay round trip, `psutil` `AccessDenied` / `NoSuchProcess` / first-sample handling (with fake processes), one live smoke test |
 | [`sysopt/engine/registry.py`](sysopt/engine/registry.py), [`idle.py`](sysopt/engine/idle.py): `ProcessRegistry`, `IdleTracker` | [`tests/test_registry_idle.py`](tests/test_registry_idle.py) | Process exit, PID reuse, re-parenting, idle exactly at T (not before), CPU spikes reset the timer, unknown CPU is never idle |
 | [`sysopt/engine/monitor.py`](sysopt/engine/monitor.py): `Monitor` | [`tests/test_monitor.py`](tests/test_monitor.py) | Top-K by CPU and RAM, idle candidates and RAM savings, user-only filter, minimum-size filter, output formatting |
+| [`sysopt/structures/graph.py`](sysopt/structures/graph.py): `DirectedGraph` | [`tests/test_graph.py`](tests/test_graph.py) | BFS and DFS order, same nodes from both, cycles terminate, multi-source `reachable`, vertex/edge removal, 5,000-deep chain without recursion errors |
+| [`sysopt/profiler/subtree.py`](sysopt/profiler/subtree.py): `ProcessTree` | [`tests/test_subtree.py`](tests/test_subtree.py) | Subtree totals match hand-calculated values (BFS and DFS), re-parented orphans, app families, name search, tree rendering |
+| [`sysopt/cli.py`](sysopt/cli.py): `main` | [`tests/test_cli.py`](tests/test_cli.py) | Every command on fixtures, recording with `--record`, error messages and exit codes |
 
 All tests except one live smoke test run on hand-written JSON fixtures in [`fixtures/`](fixtures/), so results are the same on every machine.
 
-## Trying the Monitor
+## Command-Line Tool
+
+Run from the project root with the virtual environment active. Every command reads this computer by default; add `--source PATH` to replay a JSON fixture instead.
 
 ```bash
-# Live: 3 polls, 2 seconds apart, top 5 by CPU
-python3 -c "from sysopt.engine.monitor import Monitor, format_poll_result; from sysopt.sources.live import LiveSource; print(format_poll_result(Monitor(LiveSource(), k=5).run(3, 2.0)[-1]))"
+# Top 10 processes by CPU (or --metric ram)
+python3 -m sysopt top
 
-# Record your own session (10 polls), then replay it offline
-python3 -c "from sysopt.sources.live import LiveSource; from sysopt.sources.snapshot import record_session; record_session(LiveSource(), 10, 2.0, 'fixtures/recorded_session.json')"
+# Poll every 2 seconds; show top processes, idle apps, and the RAM they hold. Ctrl-C to stop.
+python3 -m sysopt watch --idle-secs 300 --min-rss 50
+
+# Same, and save every poll so it can be replayed later
+python3 -m sysopt watch --polls 10 --record fixtures/recorded_session.json
+
+# One app's whole process family (BFS or DFS), with totals
+python3 -m sysopt tree --name chrome --depth 2
+python3 -m sysopt tree --pid 1 --method dfs --depth 1
+
+# Biggest app families: each app plus every process it spawned
+python3 -m sysopt families --k 10 --mine
+
+# Any command on recorded or hand-written data
+python3 -m sysopt families --source fixtures/small_tree.json
 ```
 
-A command-line interface (`python3 -m sysopt top|watch|tree|families|leaks`) comes in Phase 3.
+Example on the hand-written test data (`tree --source fixtures/small_tree.json --name browser`):
 
-On macOS, about a third of processes belong to the system and deny access to CPU and memory readings when run without `sudo`. These are marked `restricted` and left out of the rankings.
+```
+Browser (20) family: 4 processes, 40.0% CPU, 900.0 MB RAM
+Browser (20)  cpu 10.0%  ram 200.0 MB
+└── Browser Helper (GPU) (21)  cpu 20.0%  ram 300.0 MB
+    ├── Browser Helper (Renderer) (23)  cpu 6.0%  ram 250.0 MB
+    └── Browser Helper (Renderer) (22)  cpu 4.0%  ram 150.0 MB
+```
+
+On a real Mac, `families` rolls a browser's dozens of helper processes into one line with their combined CPU and RAM.
+
+**Notes on macOS:**
+- About a third of processes belong to the system and deny access to CPU and memory readings when run without `sudo`. These are marked `restricted` and left out of the rankings.
+- Idle means "CPU below a threshold for T seconds." The OS doesn't report when you last used an app.
+- Safari tabs and other WebKit pages (`com.apple.WebKit.WebContent`) are started by launchd rather than by the app, so each one shows up as its own family.
+- Recorded sessions list every process on your machine, so `fixtures/recorded_*.json` is in `.gitignore`.
 
 ## Bootstrap Benchmarks
 
@@ -80,10 +112,11 @@ Results go to `benchmarks/results/*.csv`, and charts to `report/figures/`. The b
 
 ```
 sysopt/
-  structures/   custom data structures (heap, hash table; graph and linked list coming)
-  sources/      process data sources (live psutil / JSON snapshots)      [Phase 2]
-  engine/       registry, idle detection, monitor                        [Phase 2]
-  profiler/     process subtree aggregation                              [Phase 3]
+  structures/   custom data structures: heap, hash table, directed graph (linked list in Phase 4)
+  sources/      process data: live psutil, JSON replay, recording
+  engine/       process registry, idle detection, monitor
+  profiler/     process trees, subtree totals, app families
+  cli.py        command-line tool (python3 -m sysopt ...)
   leaksim/      simulated heap and leak detection                        [Phase 4]
   viz/          matplotlib charts                                        [Phase 5]
 tests/          unittest files

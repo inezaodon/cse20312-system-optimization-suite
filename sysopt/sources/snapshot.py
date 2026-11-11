@@ -63,6 +63,35 @@ class SnapshotSource(ProcessSource):
         return len(self._polls)
 
 
+class RecordingSource(ProcessSource):
+    """Wraps another source and keeps a copy of every poll, to save later."""
+
+    def __init__(self, inner: ProcessSource) -> None:
+        self.inner = inner
+        self._polls: List[Dict[str, Any]] = []
+        self._t0: Optional[float] = None
+
+    def poll(self) -> Optional[PollData]:
+        data = self.inner.poll()
+        if data is not None:
+            t, snaps = data
+            if self._t0 is None:
+                self._t0 = t
+            self._polls.append({"t": round(t - self._t0, 3),
+                                "processes": [s.to_dict() for s in snaps]})
+        return data
+
+    def __len__(self) -> int:
+        return len(self._polls)
+
+    def save(self, out_path: str, description: str = "") -> int:
+        doc = {"description": description or f"Recorded session: {len(self._polls)} polls.",
+               "polls": self._polls}
+        with open(out_path, "w") as f:
+            json.dump(doc, f, indent=1)
+        return len(self._polls)
+
+
 def record_session(source: ProcessSource, n_polls: int, interval: float, out_path: str,
                    description: str = "",
                    sleep: Callable[[float], None] = time.sleep) -> int:
@@ -71,22 +100,11 @@ def record_session(source: ProcessSource, n_polls: int, interval: float, out_pat
     Timestamps are stored relative to the first poll, so recordings start at t=0.
     Returns the number of polls written.
     """
-    polls = []
-    t0: Optional[float] = None
+    rec = RecordingSource(source)
     for i in range(n_polls):
         if i > 0 and interval > 0:
             sleep(interval)
-        result = source.poll()
-        if result is None:
+        if rec.poll() is None:
             break
-        t, snaps = result
-        if t0 is None:
-            t0 = t
-        polls.append({"t": round(t - t0, 3), "processes": [s.to_dict() for s in snaps]})
-    doc = {
-        "description": description or f"Recorded session: {len(polls)} polls, {interval}s apart.",
-        "polls": polls,
-    }
-    with open(out_path, "w") as f:
-        json.dump(doc, f, indent=1)
-    return len(polls)
+    return rec.save(out_path, description or
+                    f"Recorded session: {len(rec)} polls, {interval}s apart.")

@@ -87,7 +87,7 @@ DS Project/
 
 1. Create the virtual environment and install the dependencies:
    ```bash
-   cd "/Users/odon/Desktop/DS Project"
+   cd path/to/project   # the folder containing this file
    python3 -m venv .venv
    source .venv/bin/activate
    pip install psutil matplotlib
@@ -367,23 +367,27 @@ Keep a visited set even though process trees have no cycles. The leak simulator'
 ### 3.2 `profiler/subtree.py` (≈ 1.0 h)
 
 ```python
-def build_process_graph(records) -> DirectedGraph:
-    # edge ppid -> pid for every process whose parent is present;
-    # a process whose parent is missing becomes a root
+class ProcessTree:
+    """Built from one poll's snapshots: edge ppid -> pid for every process whose
+    parent is present; a process whose parent is missing becomes a root."""
+    def __init__(self, snaps)
+    def subtree_totals(self, pid, method="bfs") -> SubtreeTotals
+    def family_heads(self) -> list[int]       # children of PID 0/1, plus orphan roots
+    def top_families(self, k=5, metric="ram", mine_only=False) -> list[SubtreeTotals]
+    def find_by_name(self, text) -> list[int]          # case-insensitive substring match
+    def find_family_roots(self, text) -> list[int]     # matches whose parent doesn't match
+    def render(self, pid, max_depth=None, max_children=10) -> str
 
 @dataclass
 class SubtreeTotals:
     root_pid: int
+    root_name: str
     process_count: int
     cpu_percent: float
     rss_mb: float
+    unknown_count: int      # members missing a reading
+    is_mine: bool
     members: list[int]
-
-def subtree_totals(graph, registry, pid, method="bfs") -> SubtreeTotals
-def top_families(graph, registry, k=5, metric="rss") -> list[SubtreeTotals]
-    # find each top-level app process (a direct child of PID 1/launchd), total its subtree,
-    # and rank the families with top_k
-def find_by_name(registry, name) -> list[int]   # case-insensitive substring match
 ```
 
 **Done when:** `tests/test_subtree.py` passes:
