@@ -52,7 +52,8 @@ DS Project/
 │   ├── leaksim/                 # Subsystem 3
 │   │   ├── __init__.py
 │   │   ├── heap_sim.py          # SimulatedHeap, Block, errors
-│   │   └── scenarios.py         # scripted demo programs
+│   │   ├── scenarios.py         # scripted demo programs
+│   │   └── report.py            # text reports for the leaks command
 │   └── viz/
 │       ├── __init__.py
 │       └── charts.py            # matplotlib charts
@@ -461,6 +462,8 @@ class SimulatedHeap:
     def reference_graph(self) -> DirectedGraph    # roots + blocks as vertices, pointers as edges
     def detect_leaks(self) -> list[Block]         # allocated blocks NOT in graph.reachable(roots)
     def dangling_pointers(self) -> list           # roots/fields that point at freed memory (bonus warning)
+    def refcount(self, address) -> int            # pointers to a block (what reference counting sees)
+    def refcount_misses(self) -> list[Block]      # leaked blocks a reference-counting collector would never free (cycles)
     def leaked_bytes(self) -> int
     def velocity_history(self) -> list[float]     # leaked_bytes[t] - leaked_bytes[t-1]
     def average_velocity(self) -> float           # leaked_bytes / ticks
@@ -488,7 +491,7 @@ Scripted "programs", each a function `scenario(heap) -> None` that calls `malloc
 | `slow_leak` | a loop that leaks one 64 B buffer every tick for 50 ticks | constant velocity of 64 B/tick |
 | `partial_free` | frees the head but not the rest of the list | the remaining nodes, plus a dangling-pointer warning |
 
-Add `python3 -m sysopt leaks --scenario NAME [--plot]` to the CLI. It prints `stats()`, the leaked blocks (address, size, label, tick allocated), and the average velocity. `--plot` saves the leak velocity chart.
+Add `python3 -m sysopt leaks [--scenario NAME] [--trace]` to the CLI. With no scenario it prints a summary table of all five. With one, it prints `stats()`, the leaked blocks (address, size, tick allocated, reference count, label), any dangling pointers, the average velocity, and a note when a leak is one that reference counting would miss. `--trace` prints every operation. The `--plot` flag is added in Phase 5 with the other charts.
 
 **Done when:** `tests/test_leaksim.py` passes:
 * each scenario's leak count and bytes match the table above

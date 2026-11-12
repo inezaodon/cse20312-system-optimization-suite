@@ -16,7 +16,7 @@ See [`project_proposal.md`](project_proposal.md) for the design and [`BUILD_PLAN
 | 1. Bootstrap data structures + benchmarks | ✅ Done |
 | 2. Data sources, ingestion & ranking | ✅ Done |
 | 3. Subtree profiler + command-line tool | ✅ Done |
-| 4. Memory leak simulator | ⏳ Not started |
+| 4. Memory leak simulator | ✅ Done |
 | 5. Charts, testing pass & report | ⏳ Not started |
 
 ## Setup
@@ -46,6 +46,8 @@ python3 -m unittest discover -v
 | [`sysopt/engine/monitor.py`](sysopt/engine/monitor.py): `Monitor` | [`tests/test_monitor.py`](tests/test_monitor.py) | Top-K by CPU and RAM, idle candidates and RAM savings, user-only filter, minimum-size filter, output formatting |
 | [`sysopt/structures/graph.py`](sysopt/structures/graph.py): `DirectedGraph` | [`tests/test_graph.py`](tests/test_graph.py) | BFS and DFS order, same nodes from both, cycles terminate, multi-source `reachable`, vertex/edge removal, 5,000-deep chain without recursion errors |
 | [`sysopt/profiler/subtree.py`](sysopt/profiler/subtree.py): `ProcessTree` | [`tests/test_subtree.py`](tests/test_subtree.py) | Subtree totals match hand-calculated values (BFS and DFS), re-parented orphans, app families, name search, tree rendering |
+| [`sysopt/structures/linked_list.py`](sysopt/structures/linked_list.py): `DoublyLinkedList` | [`tests/test_linked_list.py`](tests/test_linked_list.py) | Append and unlink at the head, middle, and tail; double unlink rejected; 120 random unlinks checked against a Python list |
+| [`sysopt/leaksim/`](sysopt/leaksim/): `SimulatedHeap`, scenarios, reports | [`tests/test_leaksim.py`](tests/test_leaksim.py) | `malloc`/`free`, double and invalid free, leaks by reachability, cycles that reference counting misses, dangling pointers, leak velocity, all 5 scenarios |
 | [`sysopt/cli.py`](sysopt/cli.py): `main` | [`tests/test_cli.py`](tests/test_cli.py) | Every command on fixtures, recording with `--record`, error messages and exit codes |
 
 All tests except one live smoke test run on hand-written JSON fixtures in [`fixtures/`](fixtures/), so results are the same on every machine.
@@ -71,6 +73,9 @@ python3 -m sysopt tree --pid 1 --method dfs --depth 1
 # Biggest app families: each app plus every process it spawned
 python3 -m sysopt families --k 10 --mine
 
+# Memory leak simulator (see below)
+python3 -m sysopt leaks
+
 # Any command on recorded or hand-written data
 python3 -m sysopt families --source fixtures/small_tree.json
 ```
@@ -93,6 +98,27 @@ On a real Mac, `families` rolls a browser's dozens of helper processes into one 
 - Safari tabs and other WebKit pages (`com.apple.WebKit.WebContent`) are started by launchd rather than by the app, so each one shows up as its own family.
 - Recorded sessions list every process on your machine, so `fixtures/recorded_*.json` is in `.gitignore`.
 
+## Memory Leak Simulator
+
+A simulated C heap. Roots stand for stack variables, and blocks are `malloc` allocations that can point at each other. A block is **leaked** when it's still allocated but no chain of pointers from any root reaches it. Detection is a breadth-first search from every root over the pointer graph (the "mark" phase of mark-and-sweep garbage collection). It also catches cycles, which reference counting can't free.
+
+```bash
+python3 -m sysopt leaks                                  # summary of all five scenarios
+python3 -m sysopt leaks --scenario cycle_leak --trace    # one scenario, step by step
+```
+
+```
+Leak simulator scenarios
+  SCENARIO       LEAKED  BYTES  B/TICK DANGLING  WHAT HAPPENS
+  clean_program       0      0     0.0        0  5-node list, every node freed
+  lost_head           5    160    80.0        0  5-node list, head set to NULL without freeing
+  cycle_leak          2     96    48.0        0  A <-> B cycle with no root (reference counting misses this)
+  slow_leak          50   3200    64.0        0  a 64-byte buffer leaked on every tick for 50 ticks
+  partial_free        3     96    48.0        1  free(head) on a 4-node list: 3 nodes leak, head dangles
+```
+
+`free()` is O(1): a hash table maps each address to its node in a doubly linked list, so the block is found and unlinked without searching.
+
 ## Bootstrap Benchmarks
 
 The custom heap and hash table are compared against Python's built-in `heapq` and `dict` at n = 100 to 100,000:
@@ -112,12 +138,12 @@ Results go to `benchmarks/results/*.csv`, and charts to `report/figures/`. The b
 
 ```
 sysopt/
-  structures/   custom data structures: heap, hash table, directed graph (linked list in Phase 4)
+  structures/   custom data structures: heap, hash table, directed graph, doubly linked list
   sources/      process data: live psutil, JSON replay, recording
   engine/       process registry, idle detection, monitor
   profiler/     process trees, subtree totals, app families
   cli.py        command-line tool (python3 -m sysopt ...)
-  leaksim/      simulated heap and leak detection                        [Phase 4]
+  leaksim/      simulated heap, leak detection, scenarios, reports
   viz/          matplotlib charts                                        [Phase 5]
 tests/          unittest files
 benchmarks/     benchmark scripts and results

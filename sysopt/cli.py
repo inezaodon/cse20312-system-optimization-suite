@@ -5,8 +5,9 @@
                                 [--min-rss 50] [--all-users] [--record PATH]
     python3 -m sysopt tree      (--pid N | --name TEXT) [--method bfs|dfs] [--depth 3]
     python3 -m sysopt families  [--k 5] [--metric ram|cpu] [--mine]
+    python3 -m sysopt leaks     [--scenario NAME] [--trace]
 
-Every command takes --source: "live" (default) reads this computer through
+Every process command takes --source: "live" (default) reads this computer through
 psutil; a path to a JSON fixture replays recorded data instead.
 """
 from __future__ import annotations
@@ -90,6 +91,21 @@ def cmd_tree(args) -> int:
     return 0
 
 
+def cmd_leaks(args) -> int:
+    from .leaksim.report import format_heap_report, format_summary
+    from .leaksim.scenarios import get_scenario, run_scenario
+
+    if args.scenario is None:
+        print(format_summary())
+        return 0
+    scenario = get_scenario(args.scenario)
+    if scenario is None:
+        run_scenario(args.scenario)   # raises ValueError listing valid names
+    heap = run_scenario(args.scenario)
+    print(format_heap_report(heap, scenario, trace=args.trace, max_rows=args.max_rows))
+    return 0
+
+
 def cmd_families(args) -> int:
     tree = ProcessTree(first_snapshots(args.source))
     fams = tree.top_families(k=args.k, metric=args.metric, method=args.method,
@@ -153,6 +169,12 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--method", choices=("bfs", "dfs"), default="bfs")
     sp.add_argument("--mine", action="store_true", help="only your own apps")
     sp.set_defaults(func=cmd_families)
+
+    sp = sub.add_parser("leaks", help="run the memory leak simulator")
+    sp.add_argument("--scenario", help="scenario to run (omit for a summary of all)")
+    sp.add_argument("--trace", action="store_true", help="print every malloc/free/pointer step")
+    sp.add_argument("--max-rows", type=int, default=10, help="leaked blocks to list")
+    sp.set_defaults(func=cmd_leaks)
 
     return p
 
