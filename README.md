@@ -6,7 +6,9 @@ CSE 20312 final project. A system diagnostic tool built on custom data structure
 2. **Subtree Profiler**: totals CPU/RAM across process families using graph traversal.
 3. **Memory Leak Simulator**: simulates `malloc`/`free` and finds leaked blocks by reachability.
 
-See [`project_proposal.md`](project_proposal.md) for the design and [`BUILD_PLAN.md`](BUILD_PLAN.md) for the build plan.
+**Final report: [`report/REPORT.md`](report/REPORT.md)**: design decisions, benchmark results, complexity analysis, real-machine results, and testing.
+
+See [`project_proposal.md`](project_proposal.md) for the original proposal and [`BUILD_PLAN.md`](BUILD_PLAN.md) for the build plan.
 
 ## Status
 
@@ -17,7 +19,7 @@ See [`project_proposal.md`](project_proposal.md) for the design and [`BUILD_PLAN
 | 2. Data sources, ingestion & ranking | ✅ Done |
 | 3. Subtree profiler + command-line tool | ✅ Done |
 | 4. Memory leak simulator | ✅ Done |
-| 5. Charts, testing pass & report | ⏳ Not started |
+| 5. Charts, testing pass & report | ✅ Done |
 
 ## Setup
 
@@ -48,9 +50,16 @@ python3 -m unittest discover -v
 | [`sysopt/profiler/subtree.py`](sysopt/profiler/subtree.py): `ProcessTree` | [`tests/test_subtree.py`](tests/test_subtree.py) | Subtree totals match hand-calculated values (BFS and DFS), re-parented orphans, app families, name search, tree rendering |
 | [`sysopt/structures/linked_list.py`](sysopt/structures/linked_list.py): `DoublyLinkedList` | [`tests/test_linked_list.py`](tests/test_linked_list.py) | Append and unlink at the head, middle, and tail; double unlink rejected; 120 random unlinks checked against a Python list |
 | [`sysopt/leaksim/`](sysopt/leaksim/): `SimulatedHeap`, scenarios, reports | [`tests/test_leaksim.py`](tests/test_leaksim.py) | `malloc`/`free`, double and invalid free, leaks by reachability, cycles that reference counting misses, dangling pointers, leak velocity, all 5 scenarios |
+| [`sysopt/viz/charts.py`](sysopt/viz/charts.py): chart functions | [`tests/test_charts.py`](tests/test_charts.py) | Every chart writes a valid PNG, empty input is rejected, every `--plot` flag works |
+| All subsystems together | [`tests/test_integration.py`](tests/test_integration.py) | One source feeding the monitor, profiler, and leak simulator; families cover every process exactly once |
 | [`sysopt/cli.py`](sysopt/cli.py): `main` | [`tests/test_cli.py`](tests/test_cli.py) | Every command on fixtures, recording with `--record`, error messages and exit codes |
 
-All tests except one live smoke test run on hand-written JSON fixtures in [`fixtures/`](fixtures/), so results are the same on every machine.
+208 tests. All except one live smoke test run on hand-written JSON fixtures in [`fixtures/`](fixtures/), so results are the same on every machine. Coverage is 98%:
+
+```bash
+pip install coverage
+coverage run --source=sysopt -m unittest discover && coverage report
+```
 
 ## Command-Line Tool
 
@@ -76,6 +85,11 @@ python3 -m sysopt families --k 10 --mine
 # Memory leak simulator (see below)
 python3 -m sysopt leaks
 
+# Charts (PNG): add --plot to watch (a folder), families, or leaks (a file)
+python3 -m sysopt watch --polls 30 --plot charts/
+python3 -m sysopt families --mine --plot charts/families.png
+python3 -m sysopt leaks --scenario slow_leak --plot charts/leak_velocity.png
+
 # Any command on recorded or hand-written data
 python3 -m sysopt families --source fixtures/small_tree.json
 ```
@@ -96,7 +110,7 @@ On a real Mac, `families` rolls a browser's dozens of helper processes into one 
 - About a third of processes belong to the system and deny access to CPU and memory readings when run without `sudo`. These are marked `restricted` and left out of the rankings.
 - Idle means "CPU below a threshold for T seconds." The OS doesn't report when you last used an app.
 - Safari tabs and other WebKit pages (`com.apple.WebKit.WebContent`) are started by launchd rather than by the app, so each one shows up as its own family.
-- Recorded sessions list every process on your machine, so `fixtures/recorded_*.json` is in `.gitignore`.
+- Recorded sessions and charts made from live data list every process on your machine, so `fixtures/recorded_*.json` and `report/figures/local/` are in `.gitignore`.
 
 ## Memory Leak Simulator
 
@@ -144,9 +158,9 @@ sysopt/
   profiler/     process trees, subtree totals, app families
   cli.py        command-line tool (python3 -m sysopt ...)
   leaksim/      simulated heap, leak detection, scenarios, reports
-  viz/          matplotlib charts                                        [Phase 5]
+  viz/          matplotlib charts
 tests/          unittest files
 benchmarks/     benchmark scripts and results
 fixtures/       JSON process snapshots for tests
-report/         final report and figures
+report/         final report (REPORT.md) and figures
 ```

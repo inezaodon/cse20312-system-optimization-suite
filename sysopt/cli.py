@@ -13,6 +13,7 @@ psutil; a path to a JSON fixture replays recorded data instead.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from typing import List, Optional
 
@@ -51,7 +52,8 @@ def cmd_top(args) -> int:
 def cmd_watch(args) -> int:
     live = args.source == "live"
     source = make_source(args.source)
-    recorder = RecordingSource(source) if args.record else None
+    keep_polls = bool(args.record or args.plot)
+    recorder = RecordingSource(source) if keep_polls else None
     m = Monitor(recorder if recorder is not None else source, k=args.k, metric=args.metric,
                 cpu_threshold=args.idle_cpu, idle_seconds=args.idle_secs,
                 mine_only=not args.all_users, idle_min_rss_mb=args.min_rss)
@@ -64,9 +66,23 @@ def cmd_watch(args) -> int:
         m.run(n_polls=args.polls, interval=args.interval if live else 0, on_result=show)
     except KeyboardInterrupt:
         print("\nstopped")
-    if recorder is not None:
+    if args.record:
         n = recorder.save(args.record)
         print(f"Saved {n} polls to {args.record}")
+    if args.plot:
+        if not m.history:
+            print("error: no polls to plot", file=sys.stderr)
+            return 1
+        from .viz import charts
+        out = [
+            charts.plot_resource_timeline(recorder.raw, os.path.join(args.plot, "timeline_ram.png"),
+                                          metric="ram"),
+            charts.plot_resource_timeline(recorder.raw, os.path.join(args.plot, "timeline_cpu.png"),
+                                          metric="cpu"),
+            charts.plot_savings(m.history, os.path.join(args.plot, "savings.png")),
+        ]
+        for path in out:
+            print(f"Saved chart {path}")
     return 0
 
 
@@ -97,12 +113,20 @@ def cmd_leaks(args) -> int:
 
     if args.scenario is None:
         print(format_summary())
+        if args.plot:
+            from .leaksim.report import scenario_rows
+            from .viz import charts
+            print(f"Saved chart {charts.plot_leak_scenarios(scenario_rows(), args.plot)}")
         return 0
     scenario = get_scenario(args.scenario)
     if scenario is None:
         run_scenario(args.scenario)   # raises ValueError listing valid names
     heap = run_scenario(args.scenario)
     print(format_heap_report(heap, scenario, trace=args.trace, max_rows=args.max_rows))
+    if args.plot:
+        from .viz import charts
+        path = charts.plot_leak_velocity(heap, args.plot, title=f"Leak velocity: {scenario.name}")
+        print(f"Saved chart {path}")
     return 0
 
 
@@ -111,6 +135,9 @@ def cmd_families(args) -> int:
     fams = tree.top_families(k=args.k, metric=args.metric, method=args.method,
                              mine_only=args.mine)
     print(format_families(fams, args.metric))
+    if args.plot and fams:
+        from .viz import charts
+        print(f"Saved chart {charts.plot_family_breakdown(fams, args.plot, metric=args.metric)}")
     return 0
 
 
@@ -148,6 +175,8 @@ def build_parser() -> argparse.ArgumentParser:
                     help="include other users' and system processes as idle candidates")
     sp.add_argument("--show-idle", type=int, default=5, help="idle candidates to list (default 5)")
     sp.add_argument("--record", metavar="PATH", help="also save every poll to a JSON fixture")
+    sp.add_argument("--plot", metavar="DIR",
+                    help="save timeline_ram.png, timeline_cpu.png, and savings.png to DIR")
     sp.set_defaults(func=cmd_watch)
 
     sp = sub.add_parser("tree", help="show a process family and its total CPU and RAM")
@@ -168,12 +197,15 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--metric", choices=("cpu", "ram"), default="ram")
     sp.add_argument("--method", choices=("bfs", "dfs"), default="bfs")
     sp.add_argument("--mine", action="store_true", help="only your own apps")
+    sp.add_argument("--plot", metavar="PATH", help="save a bar chart PNG to PATH")
     sp.set_defaults(func=cmd_families)
 
     sp = sub.add_parser("leaks", help="run the memory leak simulator")
     sp.add_argument("--scenario", help="scenario to run (omit for a summary of all)")
     sp.add_argument("--trace", action="store_true", help="print every malloc/free/pointer step")
     sp.add_argument("--max-rows", type=int, default=10, help="leaked blocks to list")
+    sp.add_argument("--plot", metavar="PATH",
+                    help="save a PNG: leak velocity for --scenario, or a comparison of all scenarios")
     sp.set_defaults(func=cmd_leaks)
 
     return p

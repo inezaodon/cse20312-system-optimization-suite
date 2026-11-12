@@ -4,3 +4,5 @@ __pycache__/
 benchmarks/results/
 .DS_Store
 fixtures/recorded_*.json
+report/figures/local/
+.coverage

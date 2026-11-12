@@ -69,6 +69,7 @@ class RecordingSource(ProcessSource):
     def __init__(self, inner: ProcessSource) -> None:
         self.inner = inner
         self._polls: List[Dict[str, Any]] = []
+        self.raw: List[PollData] = []      # (seconds since first poll, snapshots)
         self._t0: Optional[float] = None
 
     def poll(self) -> Optional[PollData]:
@@ -77,8 +78,9 @@ class RecordingSource(ProcessSource):
             t, snaps = data
             if self._t0 is None:
                 self._t0 = t
-            self._polls.append({"t": round(t - self._t0, 3),
-                                "processes": [s.to_dict() for s in snaps]})
+            rel = round(t - self._t0, 3)
+            self.raw.append((rel, snaps))
+            self._polls.append({"t": rel, "processes": [s.to_dict() for s in snaps]})
         return data
 
     def __len__(self) -> int:

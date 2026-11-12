@@ -6,7 +6,7 @@ that would be freed if the user chose to close them.
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Callable, List, Optional
 
 from ..sources.base import ProcessSource
@@ -73,11 +73,13 @@ class Monitor:
         for rec in records:
             self.tracker.update(rec, t)
 
+        # Copy the records: the registry updates them in place on later polls, and a
+        # PollResult must keep showing the values from its own moment in time.
         result = PollResult(
             t=t,
             metric=self.metric,
-            top=self.rank(records),
-            idle=self._idle_candidates(records),
+            top=[replace(r) for r in self.rank(records)],
+            idle=[replace(r) for r in self._idle_candidates(records)],
             savings_rss_mb=0.0,
             process_count=len(records),
             restricted_count=sum(1 for r in records if r.snap.restricted),

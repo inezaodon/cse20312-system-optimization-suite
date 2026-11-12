@@ -51,6 +51,18 @@ def format_heap_report(heap: SimulatedHeap, scenario: Optional[Scenario] = None,
     return "\n".join(lines)
 
 
+def scenario_rows():
+    """(name, {"leaked_bytes", "refcount_missed_bytes"}) for every scenario, for charts."""
+    rows = []
+    for s in SCENARIOS:
+        heap = run_scenario(s.name)
+        rows.append((s.name, {
+            "leaked_bytes": heap.leaked_bytes(),
+            "refcount_missed_bytes": sum(b.size for b in heap.refcount_misses()),
+        }))
+    return rows
+
+
 def format_summary() -> str:
     lines = ["Leak simulator scenarios",
              f"  {'SCENARIO':<14} {'LEAKED':>6} {'BYTES':>6} {'B/TICK':>7} {'DANGLING':>8}  WHAT HAPPENS"]

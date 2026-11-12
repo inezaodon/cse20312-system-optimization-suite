@@ -57,11 +57,16 @@ class DirectedGraph:
         return self.has_vertex(v)
 
     # ----- edges ------------------------------------------------------------
-    def add_edge(self, u: Hashable, v: Hashable) -> None:
-        """Add u -> v, creating either vertex if needed. Duplicate edges are ignored."""
+    def add_edge(self, u: Hashable, v: Hashable, check_duplicate: bool = True) -> None:
+        """Add u -> v, creating either vertex if needed. Duplicate edges are ignored.
+
+        The duplicate check scans u's child list, which is O(deg(u)), so adding
+        d edges from one vertex costs O(d^2). Callers that know an edge can't
+        already exist (one parent per process) pass check_duplicate=False for O(1).
+        """
         self.add_vertex(u)
         self.add_vertex(v)
-        if v not in self._out[u]:
+        if not check_duplicate or v not in self._out[u]:
             self._out[u].append(v)
             self._in[v].append(u)
             self._edges += 1

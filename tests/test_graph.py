@@ -33,6 +33,13 @@ class TestStructure(unittest.TestCase):
         self.assertEqual(g.neighbors(1), [2])
         self.assertEqual(g.edge_count(), 1)
 
+    def test_add_edge_without_duplicate_check(self):
+        g = DirectedGraph()
+        for v in range(1000):
+            g.add_edge("hub", v, check_duplicate=False)
+        self.assertEqual(len(g.neighbors("hub")), 1000)
+        self.assertEqual(g.edge_count(), 1000)
+
     def test_add_vertex_idempotent(self):
         g = DirectedGraph()
         g.add_edge(1, 2)

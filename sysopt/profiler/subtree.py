@@ -44,8 +44,10 @@ class ProcessTree:
         for s in snaps:
             # Skip self-loops (kernel_task reports ppid 0 == its own pid) and
             # parents that aren't in the data (the child becomes a root).
+            # Each process has exactly one parent, so this edge can't already exist.
+            # Skipping the duplicate scan keeps building O(V) instead of O(sum of deg^2).
             if s.ppid != s.pid and s.ppid in self._snaps:
-                self.graph.add_edge(s.ppid, s.pid)
+                self.graph.add_edge(s.ppid, s.pid, check_duplicate=False)
 
     # ----- lookups ------------------------------------------------------------
     def snapshot(self, pid: int) -> ProcessSnapshot:

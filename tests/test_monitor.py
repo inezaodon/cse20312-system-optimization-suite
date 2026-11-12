@@ -106,6 +106,14 @@ class TestRunAndFormat(unittest.TestCase):
         self.assertEqual([r.elapsed for r in res], [0.0, 2.5])
         self.assertIn("t=+2.5s", format_poll_result(res[1]))
 
+    def test_history_is_not_changed_by_later_polls(self):
+        m = Monitor(SnapshotSource(fixture("idle_sequence.json")), k=2)
+        res = m.run(interval=0)
+        spike = res[6]                        # t=360: Slack at 15.0% CPU
+        self.assertEqual([(r.snap.pid, r.snap.cpu_percent) for r in spike.top],
+                         [(300, 35.0), (200, 15.0)])
+        self.assertEqual(res[7].top[1].snap.pid, 400)   # t=420: Slack quiet again
+
     def test_poll_after_end_returns_none(self):
         m = Monitor(SnapshotSource(fixture("small_tree.json")))
         self.assertIsNotNone(m.poll_once())

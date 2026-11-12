@@ -507,11 +507,12 @@ Add `python3 -m sysopt leaks [--scenario NAME] [--trace]` to the CLI. With no sc
 
 | Function | Chart | Output |
 | :--- | :--- | :--- |
-| `plot_benchmarks(csv_paths)` | log–log time vs. N, custom vs. built-in | `report/figures/bench_heap.png`, `bench_hash.png` |
+| `plot_benchmarks` | log–log time vs. N, custom vs. built-in | `report/figures/bench_heap.png`, `bench_hash_table.png` (lives in `benchmarks/plot_benchmarks.py`) |
 | `plot_resource_timeline(poll_results, top_n=5)` | RSS (or CPU) over time for the top processes | `report/figures/timeline.png` |
 | `plot_savings(poll_results)` | potential savings (MB) from idle candidates over time | `report/figures/savings.png` |
 | `plot_leak_velocity(heap)` | leaked bytes over ticks, plus a per-tick velocity bar | `report/figures/leak_velocity.png` |
 | `plot_family_breakdown(families)` | horizontal bar chart of top app families by RSS | `report/figures/families.png` |
+| `plot_leak_scenarios(rows)` | leaked bytes per scenario: reachability vs. reference counting | `report/figures/leak_scenarios.png` |
 
 Add `--plot` flags to the `watch`, `families`, and `leaks` commands. Use `matplotlib.use("Agg")` so charts save without opening a window.
 
@@ -592,10 +593,10 @@ Reserved for debugging `psutil` behavior on macOS, matplotlib layout tweaks, and
 
 ## Final Submission Checklist
 
-- [ ] `python3 -m unittest discover -s tests -v`: all tests pass
-- [ ] Benchmarks re-run; plots in `report/figures/`
-- [ ] All 5 CLI commands work on live data and on fixtures
-- [ ] `report/REPORT.md` complete, with charts and the Big-O table
-- [ ] `README.md` setup steps tested from scratch
+- [x] `python3 -m unittest discover -s tests -v`: all tests pass
+- [x] Benchmarks run; plots in `report/figures/` (heap and hash table code unchanged since, so results still apply)
+- [x] All 5 CLI commands work on live data and on fixtures
+- [x] `report/REPORT.md` complete, with charts and the Big-O table
+- [x] `README.md` setup steps tested from scratch
 - [ ] zyBook chapter numbers in the proposal checked against the syllabus
-- [ ] No `heapq` or `dict` storage inside `sysopt/structures/` (`grep -rn "heapq\|= {}" sysopt/structures` returns only allowed uses)
+- [x] No `heapq` or `dict` storage inside `sysopt/structures/` (`grep -rn "heapq\|= {}" sysopt/structures` returns only allowed uses)
